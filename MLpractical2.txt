@@ -1,0 +1,51 @@
+Practical 2 ML
+import numpy as np
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+data = load_iris()
+x = data.data
+y = data.target
+X_train, X_test, y_train, y_test =  train_test_split(x, y, test_size=0.3, random_state=12)
+
+clf= DecisionTreeClassifier(random_state=12)
+clf.fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+
+accuracy= accuracy_score (y_test, y_pred)
+print("Accuracy before pruning: ", accuracy)
+
+importances = clf.feature_importances_
+min_importance = 0.05
+
+for feature, importance in enumerate(importances):
+    print(feature,importance)
+
+clf.tree_.children_left
+clf.tree_.children_right
+
+def prune_tree(tree,threshold):
+    for feature, importance in enumerate(importances):
+        if importance<threshold:
+            prune_subtree(tree,feature)
+
+def prune_subtree(tree,feature):
+    children_left = tree.children_left
+    children_right = tree.children_right
+    if children_left[feature]!= children_right[feature]:
+        tree.children_left[feature]=children_left[feature]
+        tree.children_right[feature]=children_right[feature]
+        prune_subtree(tree,children_left[feature])
+        prune_subtree(tree,children_right[feature])
+
+prune_tree(clf.tree_,min_importance)
+y_pred_pruned = clf.predict(X_test)
+
+accuracy_pruned= accuracy_score(y_test,y_pred_pruned)
+print('Accuracy after pruning :',accuracy_pruned)
+
+#clf.tree_.children_left
+#clf.tree_.children_right

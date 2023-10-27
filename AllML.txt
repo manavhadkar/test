@@ -1,0 +1,186 @@
+Practical 1 ML
+import numpy as np
+import pandas as pd
+from sklearn.datasets import load_breast_cancer
+from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score
+
+data = load_breast_cancer()
+data['feature_names']
+# data['target']
+data.data.shape
+df=pd.DataFrame(data['data'])
+df.columns = data['feature_names']
+# df
+X = data.data
+Y = data.target
+x_train,x_test,y_train,y_test=train_test_split(X,Y,
+                                               test_size=0.2,
+                                               random_state=109)
+clf = DecisionTreeClassifier(random_state=109)
+clf.fit(x_train,y_train)
+y_pred= clf.predict(x_test)
+
+accuracy = accuracy_score(y_test,y_pred)
+print("Accuracy :",accuracy)
+---------------------------------------------------------
+
+Practical 2 ML
+import numpy as np
+import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+
+data = load_iris()
+x = data.data
+y = data.target
+X_train, X_test, y_train, y_test =  train_test_split(x, y, test_size=0.3, random_state=12)
+
+clf= DecisionTreeClassifier(random_state=12)
+clf.fit(X_train, y_train)
+y_pred = clf.predict(X_test)
+
+accuracy= accuracy_score (y_test, y_pred)
+print("Accuracy before pruning: ", accuracy)
+
+importances = clf.feature_importances_
+min_importance = 0.05
+
+for feature, importance in enumerate(importances):
+    print(feature,importance)
+
+clf.tree_.children_left
+clf.tree_.children_right
+
+def prune_tree(tree,threshold):
+    for feature, importance in enumerate(importances):
+        if importance<threshold:
+            prune_subtree(tree,feature)
+
+def prune_subtree(tree,feature):
+    children_left = tree.children_left
+    children_right = tree.children_right
+    if children_left[feature]!= children_right[feature]:
+        tree.children_left[feature]=children_left[feature]
+        tree.children_right[feature]=children_right[feature]
+        prune_subtree(tree,children_left[feature])
+        prune_subtree(tree,children_right[feature])
+
+prune_tree(clf.tree_,min_importance)
+y_pred_pruned = clf.predict(X_test)
+
+accuracy_pruned= accuracy_score(y_test,y_pred_pruned)
+print('Accuracy after pruning :',accuracy_pruned)
+
+#clf.tree_.children_left
+#clf.tree_.children_right
+----------------------------------------------------------------
+Practical 3 ML
+import matplotlib.pyplot as plt
+from sklearn.cluster import KMeans
+from sklearn.datasets import load_iris
+
+iris = load_iris()
+X = iris.data
+
+wcss=[]
+for i in range(1,11):
+  kmeans = KMeans(n_clusters=i, init = 'k-means++', random_state = 42)
+  kmeans.fit(X)
+  wcss.append(kmeans.inertia_)
+wcss
+
+plt.figure(figsize=(8,6))
+plt.plot(range(1,11),wcss,marker='o', linestyle='-', color='b')
+plt.title('Elbow Method for Iris Dataset')
+plt.xlabel('Number of clusters (k)')
+plt.ylabel('WCSS')
+plt.grid(True)
+plt.show()
+------------------------------------------------------------
+Practical 4 ML
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.cluster.hierarchy import dendrogram, linkage
+from sklearn.datasets import make_blobs
+
+data,_ = make_blobs(n_samples=300, centers = 4,random_state=42)
+linkage_matrix = linkage(data,method = 'ward')
+
+plt.figure(figsize=(10,5))
+plt.title("Hierarchical Clustering Dendogram")
+dendrogram(linkage_matrix,truncate_mode='level',p=3)
+plt.xlabel("Sample Index or Cluster Size")
+plt.ylabel("Distance")
+plt.show()
+
+from scipy.cluster.hierarchy import fcluster
+num_clusters = 4
+cluster_labels = fcluster(linkage_matrix,t=num_clusters, criterion ='maxclust')
+
+plt.figure(figsize=(7,5))
+plt.scatter(data[:,0],data[:,1],c=cluster_labels, cmap = 'rainbow')
+plt.title("Hierarchical Clustering Results")
+plt.xlabel("Feature 1")
+plt.ylabel("Feature 2")
+plt.show()
+print("Cluster Labels:", cluster_labels)
+----------------------------------------------------------------
+
+Practical 5 ML
+import numpy as np
+import matplotlib.pyplot as plt
+from sklearn.datasets import make_moons
+from sklearn.cluster import DBSCAN
+
+data,_ = make_moons(n_samples= 200, noise = 0.05, random_state = 42)
+eps = 0.3
+min_samples = 5
+
+dbscan = DBSCAN(eps = eps, min_samples=min_samples)
+cluster_labels = dbscan.fit_predict(data)
+
+plt.figure(figsize=(8-1,6-1))
+plt.scatter(data[:,0],data[:,1],c=cluster_labels, cmap = 'viridis')
+plt.title("DBSCAN Clustering Results")
+plt.xlabel("Feature 1")
+plt.ylabel("Feature 2")
+plt.show()
+print("Cluster Labels:", cluster_labels)
+
+--------------------------------------------------------------
+Practical 6 ML
+from pgmpy.models import BayesianNetwork
+from pgmpy.factors.discrete import TabularCPD
+from pgmpy.inference import VariableElimination
+
+model = BayesianNetwork([('Flu','Fever'),('Flu','Cough')])
+cpd_flu = TabularCPD(variable = 'Flu',variable_card=2,values=[[0.4],[0.6]])
+print(cpd_flu)
+
+cpd_fever = TabularCPD(variable = 'Fever',
+                       variable_card=2,
+                       values=[[0.1,0.7],[0.9,0.3]],
+                       evidence=['Flu'],
+                       evidence_card=[2])
+print(cpd_fever)
+
+cpd_cough = TabularCPD(variable = 'Cough',variable_card=2,
+                   values=[[0.2,0.8],
+                            [0.8,0.2]],
+                   evidence=['Flu'],
+                   evidence_card=[2])
+print(cpd_cough)
+
+model.add_cpds(cpd_flu, cpd_fever, cpd_cough)
+
+assert model.check_model()
+inference = VariableElimination(model)
+result1 = inference.query(variables=['Flu'],evidence = {'Fever':1,'Cough':0})
+print(result1)
+result2 = inference.query(variables=['Fever'],evidence = {'Flu':1,'Cough':0})
+print(result2)

@@ -1,0 +1,49 @@
+Practical 2
+Aim: Implement time series analysis with the help of appropriate data and forecast the result
+
+Code:
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+
+# Load and Prepare Data
+url = 'https://raw.githubusercontent.com/jbrownlee/Datasets/master/airline-passengers.csv'
+data = pd.read_csv(url)
+data['Month'] = pd.to_datetime(data['Month'])
+data.set_index('Month', inplace=True)
+
+# Set Frequency
+data = data.asfreq('MS')  # Set the frequency to month start
+
+# Visualize Data
+plt.figure(figsize=(10, 6))
+plt.plot(data)
+plt.title('Monthly Airline Passenger Data')
+plt.xlabel('Year')
+plt.ylabel('Passenger Count')
+plt.show()
+
+# Decompose Seasonality
+result = seasonal_decompose(data, model='multiplicative', period=12)
+result.plot()
+plt.show()
+
+# Forecasting with Exponential Smoothing
+train_size = int(len(data) * 0.8)
+train, test = data.iloc[:train_size], data.iloc[train_size:]
+
+model = ExponentialSmoothing(train, seasonal='add', seasonal_periods=12)
+fit_model = model.fit()
+forecast = fit_model.forecast(steps=len(test))
+
+plt.figure(figsize=(10, 6))
+plt.plot(train, label='Train Data')
+plt.plot(test, label='Test Data')
+plt.plot(forecast, label='Forecast')
+plt.title('Airline Passenger Forecast using Exponential Smoothing')
+plt.xlabel('Year')
+plt.ylabel('Passenger Count')
+plt.legend()
+plt.show()

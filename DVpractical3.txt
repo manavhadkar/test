@@ -1,0 +1,52 @@
+PRACTICAL 3
+AIM: Handle missing values in time-series
+
+CODE:
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+
+dataset= pd.read_csv('Time-Series.csv', header=None)
+
+dataset.columns=['Date','Customers']
+
+dataset['Date']=pd.to_datetime(dataset['Date'], format='%Y-%m')
+
+dataset= dataset.set_index('Date')
+
+dataset.shape
+dataset.head()
+
+nul_data = pd.isnull(dataset['Customers'])
+dataset[nul_data]
+
+plt.rcParams['figure.figsize']=(15,7)
+plt.plot(dataset, color='blue')
+plt.title('Customers visted shop since 1950')
+plt.show()
+# USING MEAN
+plt.rcParams['figure.figsize']=(15,7)
+dataset = dataset.assign(FillMean=dataset.Customers.fillna(dataset.Customers.mean()))
+plt.plot(dataset, color='blue')
+plt.title('MEAN IMPUTATION')
+plt.show()
+# USING MEDIAN
+plt.rcParams['figure.figsize']=(15,7)
+dataset = dataset.assign(FillMean=dataset.Customers.fillna(dataset.Customers.median()))
+plt.plot(dataset, color='green')
+plt.title('MEDIAN IMPUTATION')
+plt.show()
+
+plt.rcParams['figure.figsize']=(15,7)
+dataset['Customers_locf']= dataset['Customers'].fillna(method ='bfill')
+plt.plot(dataset['Customers_locf'], color='blue')
+plt.title('Last Observation Carried Forward')
+plt.show()
+
+plt.rcParams['figure.figsize']=(15,7)
+dataset['Customers_nocb']= dataset['Customers'].fillna(method ='ffill')
+plt.plot(dataset['Customers_nocb'], color='blue')
+plt.title('Next Observation Carried Backward')
+plt.show()

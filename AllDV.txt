@@ -1,0 +1,379 @@
+PRACTICAL 1
+AIM: Demonstrate components of Time-series
+CODE:
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+np.random.seed(70)
+num_points = 100
+time = np.arange(num_points)
+trend = 0.5 * time
+noise = np.random.normal(scale=10, size=num_points)
+data = trend + noise
+
+df = pd.DataFrame({'Time': time, 'Value': data})
+
+plt.figure(figsize=(11,7))
+plt.plot(df['Time'], df['Value'], label='Time Series Data')
+plt.xlabel('Time')
+plt.ylabel('Value')
+plt.title('Synthetic Time Series Data')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+seasonal_period = 25
+seasonal_amplitude = 30
+seasonal = seasonal_amplitude * np.sin(2 * np.pi * time / seasonal_period)
+df['Value'] = df['Value'] + seasonal
+
+plt.figure(figsize=(11, 7))
+plt.plot(df['Time'], df['Value'], label='Time Series Data with Seasonal Component')
+plt.xlabel('Time')
+plt.ylabel('Value')
+plt.title('Synthetic Time Series Data with Seasonal Component')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+
+
+---------------------------------------------------------------------------------------------
+Practical 2
+Aim: Implement time series analysis with the help of appropriate data and forecast the result
+
+Code:
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from statsmodels.tsa.seasonal import seasonal_decompose
+from statsmodels.tsa.holtwinters import ExponentialSmoothing
+
+# Load and Prepare Data
+url = 'https://raw.githubusercontent.com/jbrownlee/Datasets/master/airline-passengers.csv'
+data = pd.read_csv(url)
+data['Month'] = pd.to_datetime(data['Month'])
+data.set_index('Month', inplace=True)
+
+# Set Frequency
+data = data.asfreq('MS')  # Set the frequency to month start
+
+# Visualize Data
+plt.figure(figsize=(10, 6))
+plt.plot(data)
+plt.title('Monthly Airline Passenger Data')
+plt.xlabel('Year')
+plt.ylabel('Passenger Count')
+plt.show()
+
+# Decompose Seasonality
+result = seasonal_decompose(data, model='multiplicative', period=12)
+result.plot()
+plt.show()
+
+# Forecasting with Exponential Smoothing
+train_size = int(len(data) * 0.8)
+train, test = data.iloc[:train_size], data.iloc[train_size:]
+
+model = ExponentialSmoothing(train, seasonal='add', seasonal_periods=12)
+fit_model = model.fit()
+forecast = fit_model.forecast(steps=len(test))
+
+plt.figure(figsize=(10, 6))
+plt.plot(train, label='Train Data')
+plt.plot(test, label='Test Data')
+plt.plot(forecast, label='Forecast')
+plt.title('Airline Passenger Forecast using Exponential Smoothing')
+plt.xlabel('Year')
+plt.ylabel('Passenger Count')
+plt.legend()
+plt.show()
+-----------------------------------------------------------------------------
+
+PRACTICAL 3
+AIM: Handle missing values in time-series
+
+CODE:
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import warnings
+warnings.filterwarnings('ignore')
+
+dataset= pd.read_csv('Time-Series.csv', header=None)
+
+dataset.columns=['Date','Customers']
+
+dataset['Date']=pd.to_datetime(dataset['Date'], format='%Y-%m')
+
+dataset= dataset.set_index('Date')
+
+dataset.shape
+dataset.head()
+
+nul_data = pd.isnull(dataset['Customers'])
+dataset[nul_data]
+
+plt.rcParams['figure.figsize']=(15,7)
+plt.plot(dataset, color='blue')
+plt.title('Customers visted shop since 1950')
+plt.show()
+# USING MEAN
+plt.rcParams['figure.figsize']=(15,7)
+dataset = dataset.assign(FillMean=dataset.Customers.fillna(dataset.Customers.mean()))
+plt.plot(dataset, color='blue')
+plt.title('MEAN IMPUTATION')
+plt.show()
+# USING MEDIAN
+plt.rcParams['figure.figsize']=(15,7)
+dataset = dataset.assign(FillMean=dataset.Customers.fillna(dataset.Customers.median()))
+plt.plot(dataset, color='green')
+plt.title('MEDIAN IMPUTATION')
+plt.show()
+
+plt.rcParams['figure.figsize']=(15,7)
+dataset['Customers_locf']= dataset['Customers'].fillna(method ='bfill')
+plt.plot(dataset['Customers_locf'], color='blue')
+plt.title('Last Observation Carried Forward')
+plt.show()
+
+plt.rcParams['figure.figsize']=(15,7)
+dataset['Customers_nocb']= dataset['Customers'].fillna(method ='ffill')
+plt.plot(dataset['Customers_nocb'], color='blue')
+plt.title('Next Observation Carried Backward')
+plt.show()
+------------------------------------------------------------
+
+Practical 4
+Aim:Implement minimum mse forecast and forecast error
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error
+import yfinance as yf
+
+stock_symbol = "AAPL"
+start_date = "2020-01-01"
+end_date = "2022-12-31"
+
+df = yf.download(stock_symbol, start=start_date, end=end_date)
+def simple_moving_average(data, window_size):
+    return data['Adj Close'].rolling(window=window_size).mean()
+window_size = 10  
+df['Forecast'] = simple_moving_average(df, window_size)
+mse = mean_squared_error(df['Adj Close'][window_size:], df['Forecast'][window_size:])
+print(f'Mean Squared Error (MSE): {mse}')
+df['Forecast Error'] = df['Adj Close'] - df['Forecast']
+plt.figure(figsize=(12, 6))
+plt.plot(df.index, df['Adj Close'], label='Actual Stock Price', linewidth=2)
+plt.plot(df.index, df['Forecast'], label=f'{window_size}-Day SMA Forecast', linestyle='--', linewidth=2)
+plt.title(f'{stock_symbol} Stock Price Forecast with {window_size}-Day SMA')
+plt.xlabel('Date')
+plt.ylabel('Stock Price')
+plt.legend()
+plt.show()
+---------------------------------------------------------------------------
+
+#prac 6
+# !pip install faker
+import numpy as np
+import pandas as pd
+from faker import Faker
+import random
+import datetime
+from matplotlib import pyplot as plt
+fake=Faker()
+customers=[]
+for i in range(1,501):
+  name=fake.name()
+  age=random.randint(18,80)
+  gender=random.choice(['Male','Female'])
+  address=fake.address().replace('\n',', ')
+  customers.append((i,name,age,gender,address))
+customer_df=pd.DataFrame(customers,columns=['CustomerID','Name','Age','Gender','Address'])
+
+transactions=[]
+for customer_id in range(1,501):
+  for _ in range(random.randint(5,50)):
+    transaction_date=fake.date_between(start_date='-2y',end_date='today')
+    amount = round(random.uniform(10,1000),2)
+    transactions.append((customer_id,transaction_date,amount))
+
+transaction_df = pd.DataFrame(transactions,columns=['CustomerID','TransactionDate','Amount'])
+transaction_df
+
+customer_df.to_csv('Customers.csv',index=False) #Customer and Transaction are saved file names
+transaction_df.to_csv('Transaction.csv',index=False)
+print('Synthetic banking data generated and saved to CSV files.')
+
+customers=pd.read_csv('Customers.csv')
+transactions=pd.read_csv('Transaction.csv')
+customers.head()
+transactions.head()
+
+bank_data=pd.merge(transactions,customers ,on='CustomerID')
+customer_transaction_totals=bank_data.groupby('CustomerID')['Amount'].sum().reset_index()
+customer_transaction_totals.rename(columns={'Amount':'TotalTransactionAmount'},inplace=True)
+
+gender_counts=customers['Gender'].value_counts()
+age_distribution=customers['Age'].plot.hist(bins=10,edgecolor='k')
+plt.xlabel('Age')
+plt.ylabel('Number of Customers')
+plt.title('Age Distribution of Customers')
+plt.show()
+total_transactions_distribution=customer_transaction_totals['TotalTransactionAmount'].plot.hist(
+bins=10,edgecolor='k')
+plt.xlabel('Total Transaction Amount')
+plt.ylabel('Total Transaction Amount Distribution')
+plt.show()
+summary_stats=customer_transaction_totals.describe()
+print(summary_stats)
+gender_counts.plot(kind='bar',rot=0)
+plt.xlabel('Gender')
+plt.ylabel('Count')
+plt.title('Gender Distribution of Customers')
+plt.show()
+--------------------------------------------------------------------------------
+
+Pract 8
+import pandas as pd
+import numpy as np
+import warnings
+warnings.filterwarnings("ignore")
+import plotly.express as px
+df=pd.read_excel("/content/drive/MyDrive/Copy of Daily_Transactions.xlsx")
+df
+df.rename(columns={"SHPG_TRXN_LN_DT":'Date'},inplace=True)
+df.dtypes
+#NA values count by cols
+df.isna().sum()
+
+for col in ["Special day","Clearance","promo_name","Brands"]:
+  print("\n",col,df[col].unique(),sep="\n")
+df['Special day'].fillna("No Special", inplace=True)
+df['Special day']=df['Special day'].str.strip()
+
+df['Clearance'].fillna(0, inplace=True)
+df['Clearance'].replace({0:'No',1:"Yes"},inplace=True)
+
+df['promo_name'].replace({'Non_promo':'Non_Promo'},inplace=True)
+df['promo_name']=df['promo_name'].str.replace('$',"",regex=False)
+df['promo_name']=df['promo_name'].str.strip()
+
+df['Brands'].fillna("No Brands", inplace=True)
+df['Brands']=df['Brands'].str.strip()
+
+fig= px.line(df, x="Date", y="Transactions", title='Transactions by date',
+hover_data= ['Special day', 'Clearance', 'promo_name','Brands'])
+fig.show()
+
+df[(df['Date']> '2019-11-25') & (df['Date'] <= '2019-12-02')]
+df.loc[df['Date'] == '2019-11-29', 'Special day'] = 'thanks giving + 1'
+# Box plot for Transactions
+fig=px.box(df, x="Transactions", title = 'Transactions Box Plot',
+hover_data=['Special day', 'Clearance', 'promo_name', 'Brands'])
+fig.show()
+
+avg_month_txn=pd.DataFrame(df.groupby(df['Date'].dt.strftime("%B"))['Transactions'].mean()).reset_index()
+
+avg_month_txn.rename(columns={'Date':'Month'},inplace=True)
+avg_month_txn.sort_values(by="Transactions",ascending=False,inplace=True)
+
+fig = px.bar (avg_month_txn, x='Transactions', y='Month', color='Month', title='Average transactions by month')
+fig.show()
+
+fig = px.scatter (df, x="Date", y="Transactions", title= 'Clearance sale', color='Clearance',
+hover_data=['Special day', 'Clearance', 'promo_name', 'Brands'])
+fig.show()
+
+# Subset dataframe only for promotion related transaction
+promo_df = df [df['promo_name'] != 'Non_Promo'].reset_index(drop=True)
+promo_df.head()
+
+
+avg_promo_txn = pd.DataFrame(promo_df.groupby('promo_name') [ 'Transactions'].sum()).reset_index()
+avg_promo_txn.sort_values (by= 'Transactions', ascending=False, inplace=True)
+fig = px.pie(avg_promo_txn, values = 'Transactions', names='promo_name', title= 'Total transactions by promotions')
+fig.show()
+
+avg_promo_txn = pd.DataFrame(promo_df.groupby('promo_name') [ 'Transactions'].mean()).reset_index()
+avg_promo_txn.sort_values (by= 'Transactions', ascending=False, inplace=True)
+fig = px.pie(avg_promo_txn, values = 'Transactions', names='promo_name', title= 'Total transactions by promotions')
+fig.show()
+
+promo_df['Year']=promo_df["Date"].dt.year.astype("str")
+promo_df['Count']=1
+fig = px.bar(promo_df, x='promo_name',y='Count',color='Year', title= 'Total transactions by promotions')
+fig.show()
+Pract 8
+import pandas as pd
+import numpy as np
+import warnings
+warnings.filterwarnings("ignore")
+import plotly.express as px
+df=pd.read_excel("/content/drive/MyDrive/Copy of Daily_Transactions.xlsx")
+df
+df.rename(columns={"SHPG_TRXN_LN_DT":'Date'},inplace=True)
+df.dtypes
+#NA values count by cols
+df.isna().sum()
+
+for col in ["Special day","Clearance","promo_name","Brands"]:
+  print("\n",col,df[col].unique(),sep="\n")
+df['Special day'].fillna("No Special", inplace=True)
+df['Special day']=df['Special day'].str.strip()
+
+df['Clearance'].fillna(0, inplace=True)
+df['Clearance'].replace({0:'No',1:"Yes"},inplace=True)
+
+df['promo_name'].replace({'Non_promo':'Non_Promo'},inplace=True)
+df['promo_name']=df['promo_name'].str.replace('$',"",regex=False)
+df['promo_name']=df['promo_name'].str.strip()
+
+df['Brands'].fillna("No Brands", inplace=True)
+df['Brands']=df['Brands'].str.strip()
+
+fig= px.line(df, x="Date", y="Transactions", title='Transactions by date',
+hover_data= ['Special day', 'Clearance', 'promo_name','Brands'])
+fig.show()
+
+df[(df['Date']> '2019-11-25') & (df['Date'] <= '2019-12-02')]
+df.loc[df['Date'] == '2019-11-29', 'Special day'] = 'thanks giving + 1'
+# Box plot for Transactions
+fig=px.box(df, x="Transactions", title = 'Transactions Box Plot',
+hover_data=['Special day', 'Clearance', 'promo_name', 'Brands'])
+fig.show()
+
+avg_month_txn=pd.DataFrame(df.groupby(df['Date'].dt.strftime("%B"))['Transactions'].mean()).reset_index()
+
+avg_month_txn.rename(columns={'Date':'Month'},inplace=True)
+avg_month_txn.sort_values(by="Transactions",ascending=False,inplace=True)
+
+fig = px.bar (avg_month_txn, x='Transactions', y='Month', color='Month', title='Average transactions by month')
+fig.show()
+
+fig = px.scatter (df, x="Date", y="Transactions", title= 'Clearance sale', color='Clearance',
+hover_data=['Special day', 'Clearance', 'promo_name', 'Brands'])
+fig.show()
+
+# Subset dataframe only for promotion related transaction
+promo_df = df [df['promo_name'] != 'Non_Promo'].reset_index(drop=True)
+promo_df.head()
+
+
+avg_promo_txn = pd.DataFrame(promo_df.groupby('promo_name') [ 'Transactions'].sum()).reset_index()
+avg_promo_txn.sort_values (by= 'Transactions', ascending=False, inplace=True)
+fig = px.pie(avg_promo_txn, values = 'Transactions', names='promo_name', title= 'Total transactions by promotions')
+fig.show()
+
+avg_promo_txn = pd.DataFrame(promo_df.groupby('promo_name') [ 'Transactions'].mean()).reset_index()
+avg_promo_txn.sort_values (by= 'Transactions', ascending=False, inplace=True)
+fig = px.pie(avg_promo_txn, values = 'Transactions', names='promo_name', title= 'Total transactions by promotions')
+fig.show()
+
+promo_df['Year']=promo_df["Date"].dt.year.astype("str")
+promo_df['Count']=1
+fig = px.bar(promo_df, x='promo_name',y='Count',color='Year', title= 'Total transactions by promotions')
+fig.show()

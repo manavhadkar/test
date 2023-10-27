@@ -1,0 +1,28 @@
+Practical 4 ML
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.cluster.hierarchy import dendrogram, linkage
+from sklearn.datasets import make_blobs
+
+data,_ = make_blobs(n_samples=300, centers = 4,random_state=42)
+linkage_matrix = linkage(data,method = 'ward')
+
+plt.figure(figsize=(10,5))
+plt.title("Hierarchical Clustering Dendogram")
+dendrogram(linkage_matrix,truncate_mode='level',p=3)
+plt.xlabel("Sample Index or Cluster Size")
+plt.ylabel("Distance")
+plt.show()
+
+from scipy.cluster.hierarchy import fcluster
+num_clusters = 4
+cluster_labels = fcluster(linkage_matrix,t=num_clusters, criterion ='maxclust')
+
+plt.figure(figsize=(7,5))
+plt.scatter(data[:,0],data[:,1],c=cluster_labels, cmap = 'rainbow')
+plt.title("Hierarchical Clustering Results")
+plt.xlabel("Feature 1")
+plt.ylabel("Feature 2")
+plt.show()
+print("Cluster Labels:", cluster_labels)

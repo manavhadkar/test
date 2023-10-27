@@ -1,0 +1,38 @@
+PRACTICAL 1
+AIM: Demonstrate components of Time-series
+CODE:
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
+np.random.seed(70)
+num_points = 100
+time = np.arange(num_points)
+trend = 0.5 * time
+noise = np.random.normal(scale=10, size=num_points)
+data = trend + noise
+
+df = pd.DataFrame({'Time': time, 'Value': data})
+
+plt.figure(figsize=(11,7))
+plt.plot(df['Time'], df['Value'], label='Time Series Data')
+plt.xlabel('Time')
+plt.ylabel('Value')
+plt.title('Synthetic Time Series Data')
+plt.legend()
+plt.grid(True)
+plt.show()
+
+seasonal_period = 25
+seasonal_amplitude = 30
+seasonal = seasonal_amplitude * np.sin(2 * np.pi * time / seasonal_period)
+df['Value'] = df['Value'] + seasonal
+
+plt.figure(figsize=(11, 7))
+plt.plot(df['Time'], df['Value'], label='Time Series Data with Seasonal Component')
+plt.xlabel('Time')
+plt.ylabel('Value')
+plt.title('Synthetic Time Series Data with Seasonal Component')
+plt.legend()
+plt.grid(True)
+plt.show()

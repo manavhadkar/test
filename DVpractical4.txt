@@ -1,0 +1,29 @@
+Practical 4
+Aim:Implement minimum mse forecast and forecast error
+
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.metrics import mean_squared_error
+import yfinance as yf
+
+stock_symbol = "AAPL"
+start_date = "2020-01-01"
+end_date = "2022-12-31"
+
+df = yf.download(stock_symbol, start=start_date, end=end_date)
+def simple_moving_average(data, window_size):
+    return data['Adj Close'].rolling(window=window_size).mean()
+window_size = 10  
+df['Forecast'] = simple_moving_average(df, window_size)
+mse = mean_squared_error(df['Adj Close'][window_size:], df['Forecast'][window_size:])
+print(f'Mean Squared Error (MSE): {mse}')
+df['Forecast Error'] = df['Adj Close'] - df['Forecast']
+plt.figure(figsize=(12, 6))
+plt.plot(df.index, df['Adj Close'], label='Actual Stock Price', linewidth=2)
+plt.plot(df.index, df['Forecast'], label=f'{window_size}-Day SMA Forecast', linestyle='--', linewidth=2)
+plt.title(f'{stock_symbol} Stock Price Forecast with {window_size}-Day SMA')
+plt.xlabel('Date')
+plt.ylabel('Stock Price')
+plt.legend()
+plt.show()

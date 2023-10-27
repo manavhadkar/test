@@ -1,0 +1,70 @@
+Pract 8
+import pandas as pd
+import numpy as np
+import warnings
+warnings.filterwarnings("ignore")
+import plotly.express as px
+df=pd.read_excel("/content/drive/MyDrive/Copy of Daily_Transactions.xlsx")
+df
+df.rename(columns={"SHPG_TRXN_LN_DT":'Date'},inplace=True)
+df.dtypes
+#NA values count by cols
+df.isna().sum()
+
+for col in ["Special day","Clearance","promo_name","Brands"]:
+  print("\n",col,df[col].unique(),sep="\n")
+df['Special day'].fillna("No Special", inplace=True)
+df['Special day']=df['Special day'].str.strip()
+
+df['Clearance'].fillna(0, inplace=True)
+df['Clearance'].replace({0:'No',1:"Yes"},inplace=True)
+
+df['promo_name'].replace({'Non_promo':'Non_Promo'},inplace=True)
+df['promo_name']=df['promo_name'].str.replace('$',"",regex=False)
+df['promo_name']=df['promo_name'].str.strip()
+
+df['Brands'].fillna("No Brands", inplace=True)
+df['Brands']=df['Brands'].str.strip()
+
+fig= px.line(df, x="Date", y="Transactions", title='Transactions by date',
+hover_data= ['Special day', 'Clearance', 'promo_name','Brands'])
+fig.show()
+
+df[(df['Date']> '2019-11-25') & (df['Date'] <= '2019-12-02')]
+df.loc[df['Date'] == '2019-11-29', 'Special day'] = 'thanks giving + 1'
+# Box plot for Transactions
+fig=px.box(df, x="Transactions", title = 'Transactions Box Plot',
+hover_data=['Special day', 'Clearance', 'promo_name', 'Brands'])
+fig.show()
+
+avg_month_txn=pd.DataFrame(df.groupby(df['Date'].dt.strftime("%B"))['Transactions'].mean()).reset_index()
+
+avg_month_txn.rename(columns={'Date':'Month'},inplace=True)
+avg_month_txn.sort_values(by="Transactions",ascending=False,inplace=True)
+
+fig = px.bar (avg_month_txn, x='Transactions', y='Month', color='Month', title='Average transactions by month')
+fig.show()
+
+fig = px.scatter (df, x="Date", y="Transactions", title= 'Clearance sale', color='Clearance',
+hover_data=['Special day', 'Clearance', 'promo_name', 'Brands'])
+fig.show()
+
+# Subset dataframe only for promotion related transaction
+promo_df = df [df['promo_name'] != 'Non_Promo'].reset_index(drop=True)
+promo_df.head()
+
+
+avg_promo_txn = pd.DataFrame(promo_df.groupby('promo_name') [ 'Transactions'].sum()).reset_index()
+avg_promo_txn.sort_values (by= 'Transactions', ascending=False, inplace=True)
+fig = px.pie(avg_promo_txn, values = 'Transactions', names='promo_name', title= 'Total transactions by promotions')
+fig.show()
+
+avg_promo_txn = pd.DataFrame(promo_df.groupby('promo_name') [ 'Transactions'].mean()).reset_index()
+avg_promo_txn.sort_values (by= 'Transactions', ascending=False, inplace=True)
+fig = px.pie(avg_promo_txn, values = 'Transactions', names='promo_name', title= 'Total transactions by promotions')
+fig.show()
+
+promo_df['Year']=promo_df["Date"].dt.year.astype("str")
+promo_df['Count']=1
+fig = px.bar(promo_df, x='promo_name',y='Count',color='Year', title= 'Total transactions by promotions')
+fig.show()

@@ -1,0 +1,31 @@
+practical 6 ML
+from pgmpy.models import BayesianNetwork
+from pgmpy.factors.discrete import TabularCPD
+from pgmpy.inference import VariableElimination
+
+model = BayesianNetwork([('Flu','Fever'),('Flu','Cough')])
+cpd_flu = TabularCPD(variable = 'Flu',variable_card=2,values=[[0.4],[0.6]])
+print(cpd_flu)
+
+cpd_fever = TabularCPD(variable = 'Fever',
+                       variable_card=2,
+                       values=[[0.1,0.7],[0.9,0.3]],
+                       evidence=['Flu'],
+                       evidence_card=[2])
+print(cpd_fever)
+
+cpd_cough = TabularCPD(variable = 'Cough',variable_card=2,
+                   values=[[0.2,0.8],
+                            [0.8,0.2]],
+                   evidence=['Flu'],
+                   evidence_card=[2])
+print(cpd_cough)
+
+model.add_cpds(cpd_flu, cpd_fever, cpd_cough)
+
+assert model.check_model()
+inference = VariableElimination(model)
+result1 = inference.query(variables=['Flu'],evidence = {'Fever':1,'Cough':0})
+print(result1)
+result2 = inference.query(variables=['Fever'],evidence = {'Flu':1,'Cough':0})
+print(result2)

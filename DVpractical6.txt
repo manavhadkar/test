@@ -1,0 +1,59 @@
+#prac 6
+# !pip install faker
+import numpy as np
+import pandas as pd
+from faker import Faker
+import random
+import datetime
+from matplotlib import pyplot as plt
+fake=Faker()
+customers=[]
+for i in range(1,501):
+  name=fake.name()
+  age=random.randint(18,80)
+  gender=random.choice(['Male','Female'])
+  address=fake.address().replace('\n',', ')
+  customers.append((i,name,age,gender,address))
+customer_df=pd.DataFrame(customers,columns=['CustomerID','Name','Age','Gender','Address'])
+
+transactions=[]
+for customer_id in range(1,501):
+  for _ in range(random.randint(5,50)):
+    transaction_date=fake.date_between(start_date='-2y',end_date='today')
+    amount = round(random.uniform(10,1000),2)
+    transactions.append((customer_id,transaction_date,amount))
+
+transaction_df = pd.DataFrame(transactions,columns=['CustomerID','TransactionDate','Amount'])
+transaction_df
+
+customer_df.to_csv('Customers.csv',index=False) #Customer and Transaction are saved file names
+transaction_df.to_csv('Transaction.csv',index=False)
+print('Synthetic banking data generated and saved to CSV files.')
+
+customers=pd.read_csv('Customers.csv')
+transactions=pd.read_csv('Transaction.csv')
+customers.head()
+transactions.head()
+
+bank_data=pd.merge(transactions,customers ,on='CustomerID')
+customer_transaction_totals=bank_data.groupby('CustomerID')['Amount'].sum().reset_index()
+customer_transaction_totals.rename(columns={'Amount':'TotalTransactionAmount'},inplace=True)
+
+gender_counts=customers['Gender'].value_counts()
+age_distribution=customers['Age'].plot.hist(bins=10,edgecolor='k')
+plt.xlabel('Age')
+plt.ylabel('Number of Customers')
+plt.title('Age Distribution of Customers')
+plt.show()
+total_transactions_distribution=customer_transaction_totals['TotalTransactionAmount'].plot.hist(
+bins=10,edgecolor='k')
+plt.xlabel('Total Transaction Amount')
+plt.ylabel('Total Transaction Amount Distribution')
+plt.show()
+summary_stats=customer_transaction_totals.describe()
+print(summary_stats)
+gender_counts.plot(kind='bar',rot=0)
+plt.xlabel('Gender')
+plt.ylabel('Count')
+plt.title('Gender Distribution of Customers')
+plt.show()
